@@ -1,0 +1,146 @@
+
+:root{
+    --color-fondo:#131314;
+    --color-boxes:#1e1f20;
+    --radio-bordes-boxes:15px;
+    
+    /* Texto */
+    --color-texto:#c4c7c5;
+    --color-titulo:var(--color-texto);
+    --fuente-titulo: "Notable", sans-serif;
+    --fuente-principal: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    --text-xs: 8px;   /* Textos muy pequeños (pie de página) */
+    --text-base: 12px; /* Tamaño normal de lectura */
+    --text-md: 20px;   /* Botones o subtítulos */
+    --text-lg: 32px;   /* Títulos grandes (h1) */
+}
+/* DISPOSICIÓN GENERAL DE LA PÁGINA */
+body{
+    background-color: var(--color-fondo);
+    font-family: var(--fuente-principal);
+    font-size: var(--text-base);
+    color: var(--color-texto);
+    -webkit-font-smoothing: antialiased;
+    
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;  
+}
+
+h1{
+    text-align: center;
+    font-family: var(--fuente-titulo);
+    font-size: var(--text-lg);
+    color: var(--color-titulo);
+}
+
+.contenedor-general{
+    display:grid;
+    gap: 20px;
+
+    grid-template-rows: auto 1fr auto;
+    min-height: 40vh;
+}
+
+.fila-central{
+    display:grid;
+    grid-template-columns: 0.6fr 1.2fr 0.6fr;
+    gap:20px;
+}
+
+/* LOS BOXES */
+.box{
+    background-color: var(--color-boxes);
+    border-radius:var(--radio-bordes-boxes);
+    border:none;
+
+    padding:15px;
+}
+
+/* ZONA PARA DIBUJAR */
+.contenedor-zona-canva{
+    display:felx;
+    flex-direction: column;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    /* gap:15px; */
+    /* height:100%; */
+}
+
+.area-botones{
+    height: 40px;
+    padding:0px;
+    display:flex;
+    flex-direction: row;
+    align-items:center;
+    justify-content: center;
+    gap:15px;
+}
+
+#sliderControl {
+    cursor: pointer;
+    accent-color: #000000; /* Color verde del slider para que combine con el Canva */
+    width: 80px;
+    border:none;
+}
+
+#canvas{
+    background-color: white;
+    width: 100%;
+    height: 100%;
+    /* cursor:crosshair; */
+}
+.btn-circular{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    
+    
+    border-radius:50%;
+    border: none;
+    cursor:pointer;
+    width:20px;
+    height:20px;
+}
+
+.btn-analizar-canva{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: #3498db;
+    border-radius:15px;
+    border:none;
+    cursor:pointer;
+    height:25px;
+    width: 80px;
+    color: var(--color-texto);
+
+    box-shadow: 0 5px 0 #2980b9; 
+    transition: all 0.1s;
+    user-select: none;
+}
+.btn-analizar-canva:hover{
+    background-color: #4aa3df;
+}
+
+.btn-analizar-canva:active {
+    transform: translateY(5px);
+    box-shadow: 0 0 0 #2980b9;
+}
+
+.area-botones-analizar-canva{
+    padding:0px;
+    padding-top:7px;
+    padding-bottom:12px;
+    display:flex;
+    flex-direction: row;
+    align-items:center;
+    justify-content: center;
+    gap:15px;
+}
+
+/* Zona pdf */

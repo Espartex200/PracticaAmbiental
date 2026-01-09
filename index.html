@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Brainstorming</title>
+    <!-- CSS Styling -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- TensorFlow.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest" type="text/javascript"></script>
+
+    <!-- Fuentes para la página -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Notable&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <div class="contenedor-general">
+        <div class="contenedor-titulo">
+            <h1>ASISTENTE BRAINSTORMING</h1>
+        </div>
+        
+        <div class="fila-central">
+            <div class="box contenedor-pdf">
+                Zona para pdfs
+            </div>
+            <div class="box contenedor-zona-canva">
+                <div class="area-botones-analizar-canva">
+                    <button class="btn-analizar-canva">Analizar</button>
+                </div>
+                <div class="canva">
+                    <canvas id="canvas">
+                        Elemento canva
+                    </canvas>                    
+                </div>
+                <div class="area-botones">
+                    <button class="btn-circular" data-color="#000000" style="background: #000000;"></button>
+                    <button class="btn-circular" data-color="#fb1818" style="background: #fb1818;"></button>
+                    <button class="btn-circular" data-color="#3498db" style="background: #3498db;"></button>
+                    <button class="btn-circular" data-color="#48ff00" style="background: #48ff00;"></button>
+                    <button class="btn-circular" id="btnBorrador" title="Goma de borrar">
+                        <img src="iconos/goma.png" alt="Goma" class="icono-img" style="height:70%">
+                    </button>
+                    <input type="range" min="1" max="80" value="5" id="sliderControl">
+                </div>
+            </div>
+            <div class="box contenedor-lateral">
+                Transcripción de la conversación
+            </div>
+        </div>
+        
+        <div class="box fila-inferior">
+            Interactuar con chatbot
+        </div>
+    </div>
+
+        <script src="js/index.js"></script>
+        <script src="js/canvas.js"></script>
+</body>
+</html>
