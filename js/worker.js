@@ -2,54 +2,54 @@ import { pipeline, env, cos_sim } from 'https://cdn.jsdelivr.net/npm/@xenova/tra
 
 env.allowLocalModels = false;
 
-// --- MODELOS ---
+// --- VARIABLES GLOBALES ---
 let transcriber = null;
 let embedder = null;
 let classifier = null;
-let generator = null;
+let generator = null; 
 
 let vectorStore = []; 
 
-// js/worker.js
-
-// --- CAMBIO EN LOS PROMPTS PARA MEJORAR EL ESPAÑOL ---
+// --- SOMBREROS (Configuración para LaMini CPU) ---
+// A LaMini (T5) le gusta el formato: "Question: ... Context: ... Answer:"
 const HATS = {
     'blanco': { 
         label: 'hechos y datos', 
         color: '#ecf0f1', 
-        // TRUCO: Poner las cabeceras en español (Contexto/Pregunta/Respuesta) fuerza al modelo a seguir en español.
-        prompt: 'Instrucción: Eres un asistente útil. Responde a la pregunta basándote SOLO en el contexto. Sé breve.\n\nContexto: {context}\n\nPregunta: {question}\n\nRespuesta en Español:' 
+        // CAMBIO CLAVE: Formato muy estricto en inglés (que entiende mejor) para forzar respuesta corta
+        prompt: 'Question: "{question}"? \nContext: "{context}" \nAnswer (in Spanish):' 
     },
     'rojo':   { 
-        label: 'emociones y sentimientos', 
+        label: 'emociones', 
         color: '#e74c3c', 
-        prompt: 'Tu tarea es reaccionar con intuición y sentimientos (sin justificar). \nPregunta: {question}\n\nReacción emocional en Español:' 
+        prompt: 'Task: Express feelings about this. Input: "{question}". \nReaction (in Spanish):' 
     },
     'negro':  { 
-        label: 'riesgos y criticas', 
+        label: 'crítica', 
         color: '#95a5a6', 
-        prompt: 'Tu tarea es ser crítico y pesimista. Señala los riesgos. \nPregunta: {question}\n\nCrítica en Español:' 
+        prompt: 'Task: Criticize this idea. Input: "{question}". \nCritique (in Spanish):' 
     },
     'amarillo':{ 
-        label: 'beneficios y optimismo', 
+        label: 'optimismo', 
         color: '#f1c40f', 
-        prompt: 'Tu tarea es ser optimista. Señala los beneficios y el valor. \nPregunta: {question}\n\nBeneficios en Español:' 
+        prompt: 'Task: Say something positive. Input: "{question}". \nBenefit (in Spanish):' 
     },
     'verde':  { 
-        label: 'creatividad y alternativas', 
+        label: 'creatividad', 
         color: '#2ecc71', 
-        prompt: 'Tu tarea es proponer una idea creativa o alternativa. \nPregunta: {question}\n\nIdea creativa en Español:' 
+        prompt: 'Task: Create a new idea. Input: "{question}". \nIdea (in Spanish):' 
     },
     'azul':   { 
-        label: 'control y proceso', 
+        label: 'control', 
         color: '#3498db', 
-        prompt: 'Tu tarea es organizar, resumir y definir los siguientes pasos. \nPregunta: {question}\n\nResumen y pasos en Español:' 
+        prompt: 'Task: Summarize. Input: "{question}". \nSummary (in Spanish):' 
     }
 };
 
 self.addEventListener('message', async (event) => {
     const message = event.data;
 
+    // --- 1. CARGA DE MODELOS ---
     if (message.type === 'load') {
         try {
             self.postMessage({ status: 'loading', data: 'Cargando Whisper...' });
@@ -58,16 +58,20 @@ self.addEventListener('message', async (event) => {
             self.postMessage({ status: 'loading', data: 'Cargando RAG...' });
             embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true });
 
-            self.postMessage({ status: 'loading', data: 'Cargando Agentes...' });
+            self.postMessage({ status: 'loading', data: 'Cargando Clasificador...' });
             classifier = await pipeline('zero-shot-classification', 'Xenova/mobilebert-uncased-mnli', { quantized: true });
+            
+            // USAMOS LAMINI (CPU) - Tarea text2text-generation
+            self.postMessage({ status: 'loading', data: 'Cargando Generador (LaMini)...' });
             generator = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M', { quantized: true });
 
-            self.postMessage({ status: 'ready', data: 'SISTEMA LISTO V2.0 🚀' });
+            self.postMessage({ status: 'ready', data: 'SISTEMA LISTO (CPU V3) 🚀' });
         } catch (error) {
             self.postMessage({ status: 'error', data: error.message });
         }
     }
 
+    // --- 2. GENERACIÓN ---
     if (message.type === 'generate') {
         if (!transcriber) return;
         try {
@@ -80,40 +84,27 @@ self.addEventListener('message', async (event) => {
 
             // B. Clasificar
             const intentMap = {
-                'facts data numbers': 'blanco',
-                'emotional feeling reaction': 'rojo',
-                'risks criticism negative': 'negro',
-                'benefits positive value': 'amarillo',
-                'creative ideas new': 'verde',
-                'summary process control': 'azul'
+                'facts data': 'blanco', 'emotional': 'rojo', 'risks': 'negro',
+                'benefits': 'amarillo', 'creative': 'verde', 'summary': 'azul'
             };
-            
             const classification = await classifier(text, Object.keys(intentMap));
             let selectedHat = intentMap[classification.labels[0]];
-
-            // Forzar Blanco si es pregunta
-            if (text.includes('?') || text.match(/cu(á|a)l|qu(é|e)|d(ó|o)nde|c(ó|o)mo|cu(á|a)nto/i)) {
-                selectedHat = 'blanco';
-            }
+            if (text.match(/\?|cu(á|a)l|d(ó|o)nde|c(ó|o)mo|cu(á|a)nto/i)) selectedHat = 'blanco';
 
             self.postMessage({ status: 'info', data: `Sombrero: ${selectedHat.toUpperCase()}` });
 
-            // C. RAG (Búsqueda)
+            // C. RAG (Contexto)
             let context = "";
             if (vectorStore.length > 0) {
                  const queryEmbedding = await embedder(text, { pooling: 'mean', normalize: true });
                  const results = vectorStore.map(doc => ({ 
-                     text: doc.text, 
-                     score: cos_sim(queryEmbedding.data, doc.embedding) 
+                     text: doc.text, score: cos_sim(queryEmbedding.data, doc.embedding) 
                  }));
-                 
                  results.sort((a, b) => b.score - a.score);
                  
-                 // CAMBIO AQUÍ: Cogemos 5 trozos en lugar de 3 para asegurar que entra el dato
-                 context = results.slice(0, 5).map(r => r.text).join(' ... ');
-                 
-                 // IMPORTANTE: Mira esto en la consola (F12) para ver si encuentra el texto "3 minutos"
-                 console.log("Contexto recuperado:", context); 
+                 // Limpieza agresiva: quitamos saltos de línea para que T5 no se líe
+                 context = results.slice(0, 3).map(r => r.text.replace(/(\r\n|\n|\r)/gm, " ")).join(' ... ');
+                 console.log("Contexto RAG:", context);
             }
 
             // D. Generar
@@ -122,8 +113,8 @@ self.addEventListener('message', async (event) => {
 
             const response = await generator(finalPrompt, {
                 max_new_tokens: 100,
-                temperature: 0.1,
-                repetition_penalty: 1.2
+                temperature: 0.1, // Mínima creatividad para que no invente
+                repetition_penalty: 1.5 // Penalización alta para que no repita bucles
             });
 
             self.postMessage({ 
@@ -138,9 +129,9 @@ self.addEventListener('message', async (event) => {
         }
     }
 
+    // --- 3. PROCESAR PDF ---
     if (message.type === 'add-document') {
         if (!embedder) return;
-        // Usamos la nueva función de split mejorada
         const chunks = splitTextRecursive(message.text, 500, 50); 
         vectorStore = [];
         for (const chunk of chunks) {
@@ -151,13 +142,8 @@ self.addEventListener('message', async (event) => {
     }
 });
 
-// --- NUEVA FUNCIÓN DE TEXT SPLITTER ---
-// Divide por caracteres fijos con solapamiento (overlap)
-// Esto evita cortar frases a la mitad en el borde del chunk
 function splitTextRecursive(text, chunkSize = 500, overlap = 50) {
     const chunks = [];
-    for (let i = 0; i < text.length; i += (chunkSize - overlap)) {
-        chunks.push(text.slice(i, i + chunkSize));
-    }
+    for (let i = 0; i < text.length; i += (chunkSize - overlap)) { chunks.push(text.slice(i, i + chunkSize)); }
     return chunks;
 }
