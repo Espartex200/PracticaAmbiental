@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Brainstorming</title>
-    <!-- CSS Styling -->
     <link rel="stylesheet" href="style.css" />
 
-    <!-- TensorFlow.js library -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest" type="text/javascript"></script>
 
-    <!-- Fuentes para la página -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Notable&display=swap" rel="stylesheet">
@@ -26,6 +23,7 @@
             <div class="box contenedor-pdf">
                 Zona para pdfs
             </div>
+
             <div class="box contenedor-zona-canva">
                 <div class="area-botones-analizar-canva">
                     <button class="btn-analizar-canva">Analizar</button>
@@ -46,8 +44,25 @@
                     <input type="range" min="1" max="80" value="5" id="sliderControl">
                 </div>
             </div>
-            <div class="box contenedor-lateral">
-                Transcripción de la conversación
+
+            <div class="box contenedor-lateral" style="display: flex; flex-direction: column; gap: 10px;">
+                <h3 style="margin: 0; text-align: center;">Transcripción</h3>
+                
+                <div id="transcription-output" style="
+                    flex-grow: 1; 
+                    background: rgba(0,0,0,0.2); 
+                    border-radius: 10px; 
+                    padding: 10px; 
+                    overflow-y: auto; 
+                    font-size: 0.9em; 
+                    min-height: 200px;
+                    border: 1px solid #333;">
+                    <em style="color: #666;">El texto aparecerá aquí...</em>
+                </div>
+
+                <button id="btn-record" class="btn-analizar-canva" style="width: 100%; background-color: #e74c3c;">
+                    🎤 Iniciar Grabación
+                </button>
             </div>
         </div>
         
@@ -56,7 +71,13 @@
         </div>
     </div>
 
-        <script src="js/index.js"></script>
-        <script src="js/canvas.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configurar el worker de PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <script src="js/canvas.js"></script>
+    <script type="module" src="js/index.js"></script>
 </body>
 </html>
